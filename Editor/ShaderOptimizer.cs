@@ -828,6 +828,11 @@ namespace Thry.ThryEditor
         private static bool SetLockedForAllMaterialsInternal(IEnumerable<Material> materials, int lockState, bool showProgressbar = false, bool showDialog = false, bool allowCancel = true, MaterialProperty shaderOptimizerProp = null)
         {
             Helper.RegisterEditorUse();
+            
+            // Clear stale state from previous operations
+            s_applyStructsLater.Clear();
+            s_shaderPropertyCombinations.Clear();
+            
             //first the shaders are created. compiling is suppressed with start asset editing
             AssetDatabase.StartAssetEditing();
 
@@ -1084,8 +1089,6 @@ namespace Thry.ThryEditor
             string newShaderName = "Hidden/Locked/" + shader.name + "/" + guid + (isSubAsset ? $"_{fileId}" : "");
             string shaderOptimizerButtonDrawerName = $"[{nameof(ThryShaderOptimizerLockButtonDrawer).Replace("Drawer", "")}]";
             //string newShaderDirectory = materialFolder + "/OptimizedShaders/" + material.name + "-" + smallguid + "/";
-            // unity path stuff (https://docs.unity3d.com/Manual/SpecialFolders.html)
-            // ~ & . hides the folder in the editor and unity will not be able to find the shader
             string subfoldername = material.name;
             while(subfoldername.StartsWith("."))
                 subfoldername = subfoldername.Substring(1) + "_dot_";
