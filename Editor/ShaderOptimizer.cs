@@ -519,6 +519,18 @@ namespace Thry.ThryEditor
             SetLockForAllChildrenInternal(Selection.gameObjects, 1, true);
         }
 
+        [MenuItem("GameObject/Thry/Materials/Unlock Renderers", false,0)]
+        static void UnlockRenderersOnly()
+        {
+            SetLockForAllChildrenRenderersOnlyInternal(Selection.gameObjects, 0, true);
+        }
+
+        [MenuItem("GameObject/Thry/Materials/Lock Renderers", false,0)]
+        static void LockRenderersOnly()
+        {
+            SetLockForAllChildrenRenderersOnlyInternal(Selection.gameObjects, 1, true);
+        }
+
         //---Asset Unlocking
 
         [MenuItem("Assets/Thry/Materials/Unlock All", false, 303)]
@@ -816,6 +828,13 @@ namespace Thry.ThryEditor
         public static bool SetLockedForAllMaterials(IEnumerable<Material> materials, int lockState, bool showProgressbar = false, bool showDialog = false, bool allowCancel = true, MaterialProperty shaderOptimizerProp = null)
         {
             return SetLockedForAllMaterialsInternal(materials, lockState, showProgressbar, showDialog, allowCancel, shaderOptimizerProp);
+        }
+
+        private static bool SetLockForAllChildrenRenderersOnlyInternal(GameObject[] objects, int lockState, bool showProgressbar = false, bool showDialog = false, bool allowCancel = true)
+        {
+            IEnumerable<Material> materials = objects.Where(o => o != null).SelectMany(o => o.GetComponentsInChildren<Renderer>(true)).SelectMany(r => r.sharedMaterials).Where(m => m != null);
+
+            return SetLockedForAllMaterialsInternal(materials, lockState, showProgressbar, showDialog, allowCancel);
         }
 
         private static bool SetLockForAllChildrenInternal(GameObject[] objects, int lockState, bool showProgressbar = false, bool showDialog = false, bool allowCancel = true)
@@ -2618,6 +2637,64 @@ namespace Thry.ThryEditor
         }
 #endregion
 
+#region Animator Clip Checkers
+
+#if (VRC_SDK_VRCSDK2 || VRC_SDK_VRCSDK3) && UNITY_EDITOR
+        private static IEnumerable<AnimationClip> GetClipsFromRuntimeController(RuntimeAnimatorController controller)
+        {
+            if (controller == null) yield break;
+
+            // AnimatorOverrideController wraps another controller and can override clips.
+            AnimatorOverrideController aoc = controller as AnimatorOverrideController;
+            if (aoc != null)
+            {
+                foreach (AnimationClip c in GetClipsFromRuntimeController(aoc.runtimeAnimatorController))
+                {
+                    if (c != null) yield return c;
+                }
+
+                var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>();
+                aoc.GetOverrides(overrides);
+                foreach (var kv in overrides)
+                {
+                    if (kv.Key != null) yield return kv.Key;
+                    if (kv.Value != null) yield return kv.Value;
+                }
+                yield break;
+            }
+
+            foreach (AnimationClip c in controller.animationClips)
+            {
+                if (c != null) yield return c;
+            }
+        }
+
+        private static IEnumerable<Material> GetMaterialsReferencedByClips(IEnumerable<AnimationClip> clips)
+        {
+            if (clips == null) yield break;
+
+            foreach (AnimationClip clip in clips)
+            {
+                if (clip == null) continue;
+
+                foreach (var binding in AnimationUtility.GetObjectReferenceCurveBindings(clip))
+                {
+                    if (!binding.isPPtrCurve) continue;
+                    if (!binding.type.IsSubclassOf(typeof(Renderer))) continue;
+                    if (!binding.propertyName.StartsWith("m_Materials")) continue;
+
+                    foreach (var key in AnimationUtility.GetObjectReferenceCurve(clip, binding))
+                    {
+                        Material mat = key.value as Material;
+                        if (mat != null) yield return mat;
+                    }
+                }
+            }
+        }
+#endif
+
+#endregion
+
 #region VRC Callbacks
 
         //----VRChat Callback to force Locking on upload
@@ -2629,11 +2706,11 @@ namespace Thry.ThryEditor
 
             public bool OnPreprocessAvatar(GameObject avatarGameObject)
             {
-                if(Application.isPlaying) return true;
+                if (Application.isPlaying) return true;
                 List<Material> materials = avatarGameObject.GetComponentsInChildren<Renderer>(true).SelectMany(r => r.sharedMaterials).ToList();
-#if VRC_SDK_VRCSDK3  && !UDON
+#if VRC_SDK_VRCSDK3 && !UDON
                 VRCAvatarDescriptor descriptor = avatarGameObject.GetComponent<VRCAvatarDescriptor>();
-                if(descriptor != null)
+                if (descriptor != null)
                 {
                     IEnumerable<AnimationClip> clips = descriptor.baseAnimationLayers.Select(l => l.animatorController).Where(a => a != null).SelectMany(a => a.animationClips).Distinct();
                     foreach (AnimationClip clip in clips)
@@ -2643,10 +2720,15 @@ namespace Thry.ThryEditor
                         materials.AddRange(clipMaterials);
                     }
                 }
+#if UNITY_EDITOR
+                // Scan all Animator components under the Avatar Root to catch material-swap animations
+                // that aren't part of the VRCAvatarDescriptor layer list (generic Unity approach).
+                IEnumerable<AnimationClip> animatorClips = avatarGameObject.GetComponentsInChildren<Animator>(true).Select(a => a.runtimeAnimatorController).Where(c => c != null).SelectMany(GetClipsFromRuntimeController).Distinct();
 
+                materials.AddRange(GetMaterialsReferencedByClips(animatorClips));
 #endif
-                if(SetLockedForAllMaterialsInternal(materials, 1, showProgressbar: true, showDialog: PersistentData.Get<bool>("ShowLockInDialog", true), allowCancel: false) == false)
-                    return false;
+#endif
+                if (SetLockedForAllMaterialsInternal(materials, 1, showProgressbar: true, showDialog: PersistentData.Get<bool>("ShowLockInDialog", true), allowCancel: false) == false) return false;
                 //returning true all the time, because build process cant be stopped it seems
                 return true;
             }
