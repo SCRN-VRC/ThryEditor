@@ -42,33 +42,35 @@ namespace Thry.ThryEditor.Drawers
 		float leftX = GUILib.GetPropertyX(xOffset);
 		float availableWidth = EditorGUIUtility.currentViewWidth - leftX - GUILib.SectionContentRightPadding - 1;
 		GUIContent content = new GUIContent(label.text);
-		
-		float calcHeight = EditorStyles.helpBox.CalcHeight(content, availableWidth);
-		float height = calcHeight;
-		
+
+		// Calculate height using the actual text style and width (accounting for icon + padding)
+		GUIStyle textStyle = new GUIStyle(GUI.skin.label);
+		textStyle.wordWrap = true;
+		textStyle.alignment = TextAnchor.MiddleLeft;
+		float textWidth = availableWidth - 56;
+		float textHeight = textStyle.CalcHeight(content, textWidth);
+		float height = Mathf.Max(textHeight + 8, 40); // 4px padding top+bottom, min 40 for icon
+
 		if (minLines > 0)
 		{
-			float lineHeight = EditorStyles.helpBox.CalcHeight(new GUIContent("A"), availableWidth);
-			float minHeight = lineHeight * minLines;
-			height = Mathf.Max(calcHeight, minHeight);
+			float lineHeight = textStyle.CalcHeight(new GUIContent("A"), textWidth);
+			float minHeight = lineHeight * minLines + 8;
+			height = Mathf.Max(height, minHeight);
 		}
-		
+
 		Rect r = EditorGUILayout.GetControlRect(false, height);
 		float rightEdge = r.x + r.width - GUILib.SectionContentRightPadding - 1;
 		r.x = leftX;
 		r.width = rightEdge - leftX;
-		
+
 		GUI.Box(r, GUIContent.none, GUI.skin.button);
-		
+
 		if (_customIcon != null)
 		{
 			Rect iconRect = new Rect(r.x + 5, r.y + (r.height - 32) * 0.5f, 32, 32);
 			GUI.DrawTexture(iconRect, _customIcon);
 		}
-		
-		GUIStyle textStyle = new GUIStyle(GUI.skin.label);
-		textStyle.wordWrap = true;
-		textStyle.alignment = TextAnchor.MiddleLeft;
+
 		Rect textRect = new Rect(r.x + 42, r.y + 4, r.width - 56, r.height - 8);
 		GUI.Label(textRect, label.text, textStyle);
 		
