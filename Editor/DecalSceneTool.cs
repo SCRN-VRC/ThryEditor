@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using Thry.ThryEditor.Helpers;
+using UnityEditor;
 using UnityEngine;
 
 namespace Thry.ThryEditor
@@ -282,7 +283,7 @@ namespace Thry.ThryEditor
             {
                 Quaternion delta = Quaternion.Inverse(rotation) * moved;
                 float deltaAngle = delta.eulerAngles.z;
-                DecalTool.SetClampedRotation(_propRotation, _propRotation.floatValue - deltaAngle);
+                SetClampedRotation(_propRotation, _propRotation.floatValue - deltaAngle);
             }
         }
 
@@ -317,7 +318,6 @@ namespace Thry.ThryEditor
         void OffsetMode(SceneView sceneView)
         {
             GetPivot();
-            Vector3 normal = _pivotNormal;
             if(Vector3.Dot(sceneView.camera.transform.forward, _pivotNormal) < 0)
             {
                 _pivotNormal = -_pivotNormal;
@@ -349,6 +349,13 @@ namespace Thry.ThryEditor
         Vector3 _pivotPoint;
         Vector3 _pivotNormal;
         Vector3 _pivotUp;
+
+        static float TriangleArea3D(Vector3 a, Vector3 b, Vector3 c)
+        {
+            var v1 = a - c;
+            var v2 = b - c;
+            return Vector3.Cross(v1, v2).magnitude / 2;
+        }
 
         void GetPivot()
         {
@@ -400,15 +407,13 @@ namespace Thry.ThryEditor
                 if(plane.Raycast(ray, out distance))
                 {
                     Vector3 hitPoint = ray.GetPoint(distance);
-                    // check if hitPoint is inside triangle
-                    float a = TriangleArea(triangle[0], triangle[1], triangle[2]);
+                    // check if hitPoint is inside triangle using 3D areas
+                    float a = TriangleArea3D(triangle[0], triangle[1], triangle[2]);
                     if(a == 0) continue;
-                    float a1 = TriangleArea(triangle[1], triangle[2], hitPoint) / a;
-                    if(a1 < 0) continue;
-                    float a2 = TriangleArea(triangle[2], triangle[0], hitPoint) / a;
-                    if(a2 < 0) continue;
-                    float a3 = TriangleArea(triangle[0], triangle[1], hitPoint) / a;
-                    if(a3 < 0) continue;
+                    float a1 = TriangleArea3D(triangle[1], triangle[2], hitPoint) / a;
+                    float a2 = TriangleArea3D(triangle[2], triangle[0], hitPoint) / a;
+                    float a3 = TriangleArea3D(triangle[0], triangle[1], hitPoint) / a;
+                    if(a1 + a2 + a3 > 1.001f) continue;
                     if(distance < minDistance)
                     {
                         minDistance = distance;
@@ -427,6 +432,13 @@ namespace Thry.ThryEditor
             var v1 = a - c;
             var v2 = b - c;
             return (v1.x * v2.y - v1.y * v2.x) / 2;
+        }
+
+        static void SetClampedRotation(MaterialProperty property, float value)
+        {
+            Vector2 limits = property.rangeLimits;
+            value = Helper.Mod(value - limits.x, limits.y - limits.x) + limits.x;
+            property.floatValue = value;
         }
 
         void GetMesh()
