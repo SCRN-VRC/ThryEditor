@@ -223,7 +223,8 @@ namespace Thry.ThryEditor
                         extraFoldoutGUI?.Invoke();
                         if (DrawingData.CurrentTextureProperty.hasScaleOffset)
                         {
-                            EditorGUI.showMixedValue = ShaderEditor.Active.Materials.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || ShaderEditor.Active.Materials.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
+                            var materialsWithProp = prop.targets.Cast<Material>().Where(m => m.HasProperty(prop.name));
+                            EditorGUI.showMixedValue = materialsWithProp.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || materialsWithProp.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
                             ShaderEditor.Active.Editor.TextureScaleOffsetProperty(prop);
                             Rect lastRect = GUILayoutUtility.GetLastRect();
                             tooltipRect.height = (lastRect.y - tooltipRect.y) + lastRect.height;
@@ -367,7 +368,8 @@ namespace Thry.ThryEditor
             {
                 if (DrawingData.CurrentTextureProperty.hasScaleOffset)
                 {
-                    EditorGUI.showMixedValue = ShaderEditor.Active.Materials.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || ShaderEditor.Active.Materials.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
+                    var materialsWithProp = prop.targets.Cast<Material>().Where(m => m.HasProperty(prop.name));
+                    EditorGUI.showMixedValue = materialsWithProp.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || materialsWithProp.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
                     editor.TextureScaleOffsetProperty(scale_offset_rect, prop);
                 }
 
