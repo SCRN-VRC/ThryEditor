@@ -266,7 +266,20 @@ namespace Thry.ThryEditor.Drawers
         InlinePackerChannelConfig LoadForChannel(Material m, string id, string channel)
         {
             InlinePackerChannelConfig packerChannelConfig = new InlinePackerChannelConfig();
-            packerChannelConfig.Fallback = Parser.ParseFloat(m.GetTag(id + "_texPack_" + channel + "_fallback", false, "1"));
+            // Default fallback based on the shader property's default texture
+            // "black" -> 0, "gray"/"grey" -> 0.5, everything else -> 1
+            string defaultFallback = "1";
+            int propIdx = m.shader.FindPropertyIndex(id);
+            if (propIdx >= 0)
+            {
+                string defTexName = m.shader.GetPropertyTextureDefaultName(propIdx);
+                if (!string.IsNullOrEmpty(defTexName))
+                {
+                    if (defTexName.Contains("black")) defaultFallback = "0";
+                    else if (defTexName.Contains("gray") || defTexName.Contains("grey")) defaultFallback = "0.5";
+                }
+            }
+            packerChannelConfig.Fallback = Parser.ParseFloat(m.GetTag(id + "_texPack_" + channel + "_fallback", false, defaultFallback));
             packerChannelConfig.Invert = bool.Parse(m.GetTag(id + "_texPack_" + channel + "_inverted", false, "false"));
             packerChannelConfig.Channel = (TexturePacker.TextureChannelIn)int.Parse(m.GetTag(id + "_texPack_" + channel + "_channel", false, "4"));
             packerChannelConfig.Remapping = Parser.ParseVector4(m.GetTag(id + "_texPack_" + channel + "_srcRange", false, "(0,1,0,1)"));
