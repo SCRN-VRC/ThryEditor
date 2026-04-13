@@ -223,7 +223,8 @@ namespace Thry.ThryEditor
                         extraFoldoutGUI?.Invoke();
                         if (DrawingData.CurrentTextureProperty.hasScaleOffset)
                         {
-                            EditorGUI.showMixedValue = ShaderEditor.Active.Materials.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || ShaderEditor.Active.Materials.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
+                            var materialsWithProp = prop.targets.Cast<Material>().Where(m => m.HasProperty(prop.name));
+                            EditorGUI.showMixedValue = materialsWithProp.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || materialsWithProp.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
                             ShaderEditor.Active.Editor.TextureScaleOffsetProperty(prop);
                             Rect lastRect = GUILayoutUtility.GetLastRect();
                             tooltipRect.height = (lastRect.y - tooltipRect.y) + lastRect.height;
@@ -367,7 +368,8 @@ namespace Thry.ThryEditor
             {
                 if (DrawingData.CurrentTextureProperty.hasScaleOffset)
                 {
-                    EditorGUI.showMixedValue = ShaderEditor.Active.Materials.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || ShaderEditor.Active.Materials.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
+                    var materialsWithProp = prop.targets.Cast<Material>().Where(m => m.HasProperty(prop.name));
+                    EditorGUI.showMixedValue = materialsWithProp.Select(m => m.GetTextureScale(prop.name)).Distinct().Count() > 1 || materialsWithProp.Select(m => m.GetTextureOffset(prop.name)).Distinct().Count() > 1;
                     editor.TextureScaleOffsetProperty(scale_offset_rect, prop);
                 }
 
@@ -381,7 +383,7 @@ namespace Thry.ThryEditor
                 {
                     ShaderProperty property = ShaderEditor.Active.PropertyDictionary[options.reference_property];
                     Rect r = additionRects[additionRects.Length - 1];
-                    r.width = optionsSide.width;
+                    r.width = optionsSide.xMax - r.x;
                     property.Draw(r);
                 }
                 if (options.reference_properties != null)
@@ -391,7 +393,7 @@ namespace Thry.ThryEditor
                     {
                         ShaderProperty property = ShaderEditor.Active.PropertyDictionary[r_property];
                         Rect r = additionRects[i++];
-                        r.width = optionsSide.width;
+                        r.width = optionsSide.xMax - r.x;
                         property.Draw(r);
                     }
                 }
@@ -516,48 +518,50 @@ namespace Thry.ThryEditor
             EditorGUI.indentLevel = s_previousIndentLevels.Pop();
         }
 
-        public static void MinMaxSlider(Rect settingsRect, GUIContent content, MaterialProperty prop)
+        public static void MinMaxSlider(Rect position, GUIContent content, MaterialProperty prop)
         {
-            bool changed = false;
             Vector4 vec = prop.vectorValue;
-            Rect sliderRect = settingsRect;
 
-            EditorGUI.LabelField(settingsRect, content);
+            Rect labelR = new Rect(position);
+            labelR.width = EditorGUIUtility.labelWidth;
+            EditorGUI.LabelField(labelR, content);
 
-            if (settingsRect.width > 160)
+            Rect contentR = new Rect(position);
+            contentR.x += EditorGUIUtility.labelWidth;
+            contentR.width -= EditorGUIUtility.labelWidth;
+
+            const float fieldWidth = 50;
+            const float fieldPadding = 5;
+
+            using (new IndentOverrideScope(0))
             {
-                Rect numberRect = settingsRect;
-                numberRect.width = 65;
-
-                // Position first number field after the label
-                numberRect.x = settingsRect.x + EditorGUIUtility.labelWidth;
-
                 EditorGUI.BeginChangeCheck();
                 EditorGUI.showMixedValue = prop.hasMixedValue;
-                vec.x = EditorGUI.FloatField(numberRect, vec.x, EditorStyles.textField);
-                changed |= EditorGUI.EndChangeCheck();
 
-                numberRect.x = settingsRect.xMax - numberRect.width;
+                if (contentR.width >= fieldWidth * 2 + fieldPadding * 2 + 20)
+                {
+                    Rect fieldRect = new Rect(contentR.x, contentR.y, fieldWidth, contentR.height);
+                    vec.x = EditorGUI.FloatField(fieldRect, vec.x);
 
-                EditorGUI.BeginChangeCheck();
-                EditorGUI.showMixedValue = prop.hasMixedValue;
-                vec.y = EditorGUI.FloatField(numberRect, vec.y);
-                changed |= EditorGUI.EndChangeCheck();
+                    fieldRect.x = contentR.xMax - fieldWidth;
+                    vec.y = EditorGUI.FloatField(fieldRect, vec.y);
 
-                sliderRect.xMin = settingsRect.x + EditorGUIUtility.labelWidth + 65 - 8;
-                sliderRect.xMax -= (65 + -8);
-            }
+                    Rect sliderRect = new Rect(contentR.x + fieldWidth + fieldPadding, contentR.y, 
+                        contentR.width - fieldWidth * 2 - fieldPadding * 2, contentR.height);
 
-            vec.x = Mathf.Clamp(vec.x, vec.z, vec.y);
-            vec.y = Mathf.Clamp(vec.y, vec.x, vec.w);
+                    vec.x = Mathf.Clamp(vec.x, vec.z, vec.y);
+                    vec.y = Mathf.Clamp(vec.y, vec.x, vec.w);
+                    EditorGUI.MinMaxSlider(sliderRect, ref vec.x, ref vec.y, vec.z, vec.w);
+                }
+                else
+                {
+                    vec.x = Mathf.Clamp(vec.x, vec.z, vec.y);
+                    vec.y = Mathf.Clamp(vec.y, vec.x, vec.w);
+                    EditorGUI.MinMaxSlider(contentR, ref vec.x, ref vec.y, vec.z, vec.w);
+                }
 
-            EditorGUI.BeginChangeCheck();
-            EditorGUI.MinMaxSlider(sliderRect, ref vec.x, ref vec.y, vec.z, vec.w);
-            changed |= EditorGUI.EndChangeCheck();
-
-            if (changed)
-            {
-                prop.vectorValue = vec;
+                if (EditorGUI.EndChangeCheck())
+                    prop.vectorValue = vec;
             }
         }
 

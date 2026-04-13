@@ -747,7 +747,7 @@ namespace Thry.ThryEditor
                 if (DrawingData.IconsPositioningCount == 0)
                 {
                     DrawingData.IconsPositioningCount = 1;
-                    DrawingData.IconsPositioningHeights[0] = DrawingData.LastGuiObjectRect.y + DrawingData.LastGuiObjectRect.height - 14;
+                    DrawingData.IconsPositioningHeights[0] = DrawingData.LastGuiObjectRect.y + (DrawingData.LastGuiObjectRect.height - 16) / 2f;
                 }
             }
             DrawingData.TooltipCheckRect.width = EditorGUIUtility.labelWidth;

@@ -91,7 +91,15 @@ namespace Thry.ThryEditor
             if (!File.Exists(PATH_CONFIG_FILE)) return false;
             string data = FileHelper.ReadFileIntoString(PATH_CONFIG_FILE);
             if (string.IsNullOrWhiteSpace(data)) return false;
-            config = JsonUtility.FromJson<Config>(data);
+            try
+            {
+                config = JsonUtility.FromJson<Config>(data);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[ThryEditor] Failed to parse config file, resetting to defaults: " + e.Message);
+                return false;
+            }
             return true;
         }
 
