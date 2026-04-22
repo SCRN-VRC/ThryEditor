@@ -129,6 +129,72 @@ namespace Thry.ThryEditor
                     IsExpanded = refProperty.MaterialProperty.GetNumber() == 1;
                 }
             }
+            else if (options.reference_properties != null && options.reference_properties.Any(p => ShaderEditor.Active.PropertyDictionary.ContainsKey(p)))
+            {
+                // Multiple reference property toggles in header (e.g. decals section with 4 enable checkboxes)
+                int validCount = options.reference_properties.Count(p => ShaderEditor.Active.PropertyDictionary.ContainsKey(p));
+                int textOffset = 20 + validCount * 17 + 4;
+
+                if(ShaderEditor.Active.Locale.EditInUI)
+                {
+                    GUI.Box(rect, new GUIContent("", MaterialProperty.name), Styles.flatHeader);
+                    Rect translationRect = new Rect(rect);
+                    translationRect.x += textOffset;
+                    translationRect.y += 1;
+                    translationRect.width -= textOffset + 60;
+                    translationRect.height -= 4;
+                    EditorGUI.BeginChangeCheck();
+                    string newTranslation = EditorGUI.DelayedTextField(translationRect, _content.text);
+                    if(EditorGUI.EndChangeCheck())
+                    {
+                        Content = new GUIContent(newTranslation);
+                        ShaderEditor.Active.Locale.Set(MaterialProperty.name, newTranslation);
+                        ShaderEditor.Active.Locale.Save();
+                    }
+                }
+                else
+                {
+                    int savedPadding = Styles.flatHeader.padding.left;
+                    Styles.flatHeader.padding.left = textOffset;
+                    GUI.Box(rect, new GUIContent(content.text, content.tooltip), Styles.flatHeader);
+                    Styles.flatHeader.padding.left = savedPadding;
+                    if (Config.Instance.showNotes && !string.IsNullOrWhiteSpace(Note))
+                    {
+                        Rect noteRect = new Rect(rect);
+                        float reserved = NotesHelper.GetPackedRightReservation(rect, options, this.MaterialProperty.name, Styles.label_property_note);
+                        noteRect.width = Mathf.Max(0f, noteRect.width - reserved);
+                        GUI.Label(noteRect, Note, Styles.label_property_note);
+                    }
+                }
+
+                DrawIcons(rect, options, e);
+
+                float fieldWidth = EditorGUIUtility.fieldWidth;
+                EditorGUIUtility.fieldWidth = 15;
+
+                int drawIndex = 0;
+                for (int i = 0; i < options.reference_properties.Length; i++)
+                {
+                    if (!ShaderEditor.Active.PropertyDictionary.ContainsKey(options.reference_properties[i]))
+                        continue;
+
+                    ShaderProperty refProp = ShaderEditor.Active.PropertyDictionary[options.reference_properties[i]];
+
+                    Rect toggleRect = new Rect(rect);
+                    toggleRect.x += 20 + drawIndex * 17;
+                    toggleRect.y += 3;
+                    toggleRect.height -= 6;
+                    toggleRect.width = 15;
+
+                    refProp.XOffset.SetTemporaryOffset(0);
+                    refProp.Draw(toggleRect, new GUIContent(), isInHeader: true);
+                    refProp.XOffset.ResetTemporaryOffset();
+
+                    drawIndex++;
+                }
+
+                EditorGUIUtility.fieldWidth = fieldWidth;
+            }
             else
             {
                 GUI.Box(rect, content, Styles.flatHeader);
@@ -166,6 +232,13 @@ namespace Thry.ThryEditor
             buttonRect.x -= step;
             DrawLinkSettings(buttonRect, e);
 
+            bool hasVideo = options.button_video != null && options.button_video.condition_show.Test();
+            if (hasVideo)
+            {
+                buttonRect.x -= step;
+                DrawVideoButton(buttonRect, options, e);
+            }
+
             bool hasHelp = options.button_help != null && options.button_help.condition_show.Test();
             if (hasHelp)
             {
@@ -185,6 +258,20 @@ namespace Thry.ThryEditor
             {
                 buttonRect.x -= step;
                 DrawAuthorButton(buttonRect, options, e);
+            }
+        }
+
+        private void DrawVideoButton(Rect rect, PropertyOptions options, Event e)
+        {
+            ButtonData button = options.button_video;
+            EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
+            if (GUILib.Button(rect, button.hover ?? "Watch Video", Icons.video))
+            {
+                ShaderEditor.Input.Use();
+                if (button.action != null && !string.IsNullOrEmpty(button.action.data))
+                {
+                    VideoPlayerWindow.OpenUrl(button.action.data, button.text ?? "Video Tutorial");
+                }
             }
         }
 
