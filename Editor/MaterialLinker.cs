@@ -70,7 +70,7 @@ namespace Thry.ThryEditor
         {
             Load();
             if(linked_materials.TryGetValue((m,p.name), out List<Material> links))
-                return links.Where(l => l != m);
+                return links.Where(l => l != m && l != null);
             return null;
         }
 

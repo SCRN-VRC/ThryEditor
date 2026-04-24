@@ -12,7 +12,6 @@ namespace Thry.ThryEditor.Decorators
         string _scalePropertyName;
         string _offsetPropertyName;
         DecalSceneTool _sceneTool;
-        DecalTool _tool;
 
         public ThryDecalPositioningDecorator(string textureProp, string uvIndexPropertyName, string positionProp, string rotationProp, string scaleProp, string offsetProp)
         {
@@ -52,9 +51,7 @@ namespace Thry.ThryEditor.Decorators
             bool isInScene = Selection.activeTransform != null && Selection.activeTransform.GetComponent<Renderer>() != null;
             if (isInScene)
             {
-                position.width /= 3;
-                ButtonGUI(position);
-                position.x += position.width;
+                position.width /= 2;
                 ButtonRaycast(position);
                 position.x += position.width;
                 ButtonSceneTools(position);
@@ -68,29 +65,6 @@ namespace Thry.ThryEditor.Decorators
                     if(Event.current.type == EventType.KeyUp && Event.current.keyCode == KeyCode.Escape)
                         DiscardSceneTool(true);
                 }
-            }
-            else
-            {
-                ButtonGUI(position);
-            }
-        }
-
-        void ButtonGUI(Rect r)
-        {
-            if (GUI.Button(r, "Open Positioning Tool"))
-            {
-                _tool = DecalTool.OpenDecalTool(ShaderEditor.Active.Materials[0]);
-            }
-            // This is done because the tool didnt want to update if the data was changed from the outside
-            if (_tool != null)
-            {
-                _tool.SetMaterialProperties(
-                    ShaderEditor.Active.PropertyDictionary[_texturePropertyName].MaterialProperty,
-                    ShaderEditor.Active.PropertyDictionary[_uvIndexPropertyName].MaterialProperty,
-                    ShaderEditor.Active.PropertyDictionary[_positionPropertyName].MaterialProperty,
-                    ShaderEditor.Active.PropertyDictionary[_rotationPropertyName].MaterialProperty,
-                    ShaderEditor.Active.PropertyDictionary[_scalePropertyName].MaterialProperty,
-                    ShaderEditor.Active.PropertyDictionary[_offsetPropertyName].MaterialProperty);
             }
         }
 

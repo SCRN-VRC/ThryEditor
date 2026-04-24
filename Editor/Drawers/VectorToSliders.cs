@@ -94,12 +94,12 @@ namespace Thry.ThryEditor.Drawers
 				Rect r1 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 				EditorGUI.showMixedValue = prop.hasMixedValue;
 				EditorGUI.MinMaxSlider(r1, new GUIContent(_slider1.Label), ref min1, ref max1, _slider1.Min, _slider1.Max);
-				DrawingData.IconsPositioningHeights[0] = r1.y + r1.height - 14;
+				DrawingData.IconsPositioningHeights[0] = r1.y + (r1.height - 16) / 2f;
 
 				Rect r2 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 				EditorGUI.showMixedValue = prop.hasMixedValue;
 				EditorGUI.MinMaxSlider(r2, new GUIContent(_slider2.Label), ref min2, ref max2, _slider2.Min, _slider2.Max);
-				DrawingData.IconsPositioningHeights[1] = r2.y + r2.height - 14;
+				DrawingData.IconsPositioningHeights[1] = r2.y + (r2.height - 16) / 2f;
 
 				vector = new Vector4(min1, max1, min2, max2);
 			}
@@ -108,19 +108,19 @@ namespace Thry.ThryEditor.Drawers
 				Rect r1 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 				EditorGUI.showMixedValue = prop.hasMixedValue;
 				vector.x = EditorGUI.Slider(r1, _slider1.Label, vector.x, _slider1.Min, _slider1.Max);
-				DrawingData.IconsPositioningHeights[0] = r1.y + r1.height - 14;
+				DrawingData.IconsPositioningHeights[0] = r1.y + (r1.height - 16) / 2f;
 
 				Rect r2 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 				EditorGUI.showMixedValue = prop.hasMixedValue;
 				vector.y = EditorGUI.Slider(r2, _slider2.Label, vector.y, _slider2.Min, _slider2.Max);
-				DrawingData.IconsPositioningHeights[1] = r2.y + r2.height - 14;
+				DrawingData.IconsPositioningHeights[1] = r2.y + (r2.height - 16) / 2f;
 
 				if (_slider3 != null)
 				{
 					Rect r3 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 					EditorGUI.showMixedValue = prop.hasMixedValue;
 					vector.z = EditorGUI.Slider(r3, _slider3.Label, vector.z, _slider3.Min, _slider3.Max);
-					DrawingData.IconsPositioningHeights[2] = r3.y + r3.height - 14;
+					DrawingData.IconsPositioningHeights[2] = r3.y + (r3.height - 16) / 2f;
 					DrawingData.IconsPositioningCount = 3;
 				}
 				if (_slider4 != null)
@@ -128,7 +128,7 @@ namespace Thry.ThryEditor.Drawers
 					Rect r4 = GUILib.GetPropertyRect(xOffset, EditorGUIUtility.singleLineHeight);
 					EditorGUI.showMixedValue = prop.hasMixedValue;
 					vector.w = EditorGUI.Slider(r4, _slider4.Label, vector.w, _slider4.Min, _slider4.Max);
-					DrawingData.IconsPositioningHeights[3] = r4.y + r4.height - 14;
+					DrawingData.IconsPositioningHeights[3] = r4.y + (r4.height - 16) / 2f;
 					DrawingData.IconsPositioningCount = 4;
 				}
 			}

@@ -870,11 +870,11 @@ namespace Thry.ThryEditor
         private static bool SetLockedForAllMaterialsInternal(IEnumerable<Material> materials, int lockState, bool showProgressbar = false, bool showDialog = false, bool allowCancel = true, MaterialProperty shaderOptimizerProp = null)
         {
             Helper.RegisterEditorUse();
-
-            // Clear stale state from previous operations. Reference: poiyomi/ThryEditor@5643b45
+            
+            // Clear stale state from previous operations
             s_applyStructsLater.Clear();
             s_shaderPropertyCombinations.Clear();
-
+            
             //first the shaders are created. compiling is suppressed with start asset editing
             AssetDatabase.StartAssetEditing();
 
@@ -1131,8 +1131,6 @@ namespace Thry.ThryEditor
             string newShaderName = "Hidden/Locked/" + shader.name + "/" + guid + (isSubAsset ? $"_{fileId}" : "");
             string shaderOptimizerButtonDrawerName = $"[{nameof(ThryShaderOptimizerLockButtonDrawer).Replace("Drawer", "")}]";
             //string newShaderDirectory = materialFolder + "/OptimizedShaders/" + material.name + "-" + smallguid + "/";
-            // unity path stuff (https://docs.unity3d.com/Manual/SpecialFolders.html)
-            // ~ & . hides the folder in the editor and unity will not be able to find the shader
             string subfoldername = material.name;
             while(subfoldername.StartsWith("."))
                 subfoldername = subfoldername.Substring(1) + "_dot_";
@@ -1345,7 +1343,8 @@ namespace Thry.ThryEditor
             foreach (ParsedShaderFile psf in shaderFiles)
             {
                 // Skip files with no lines (these are markers for already-inlined includes)
-                if (psf.lines == null || psf.lines.Length == 0) continue;
+                if (psf.lines == null || psf.lines.Length == 0)
+                    continue;
 
                 // replace property names when prop is animated
                 for (int i = 0; i < psf.lines.Length; i++)
@@ -1930,18 +1929,16 @@ namespace Thry.ThryEditor
                         string includeFullpath = includeFilename;
                         if (includeFilename.StartsWith("Assets/", StringComparison.Ordinal) == false && includeFilename.StartsWith("Packages/", StringComparison.Ordinal) == false) // not absolute
                             includeFullpath = GetFullPath(includeFilename, Path.GetDirectoryName(filePath));
-                        
-                        // Convert Unity asset path to absolute filesystem path for Packages. Reference: poiyomi/ThryEditor@9cde7a0
-                        if (includeFullpath.StartsWith("Packages/", StringComparison.Ordinal)) includeFullpath = Path.GetFullPath(includeFullpath);
+                        // Convert Unity asset path to absolute filesystem path for Packages/
+                        if (includeFullpath.StartsWith("Packages/", StringComparison.Ordinal))
+                            includeFullpath = Path.GetFullPath(includeFullpath);
                         // Inline the include contents instead of keeping the #include
                         string[] inlinedLines = GetInlinedIncludeLines(includeFullpath, macros, material, stripTextures, filesParsed);
-                        if (inlinedLines == null) return false;
+                        if (inlinedLines == null)
+                            return false;
                         includedLines.Add($"// [Inlined] {includeFilename}");
-
                         includedLines.AddRange(inlinedLines);
-
                         includedLines.Add($"// [End Inlined] {includeFilename}");
-
                         continue; // Don't add the #include line itself
                     }
                 }
@@ -1994,11 +1991,12 @@ namespace Thry.ThryEditor
             return basePath + '/' + relativePath;
         }
 
-        // Helper to read and process include file contents for inlining. Reference: poiyomi/ThryEditor@9cde7a0
+        // Helper to read and process include file contents for inlining
         private static string[] GetInlinedIncludeLines(string filePath, List<Macro> macros, Material material, List<string> stripTextures, List<ParsedShaderFile> alreadyProcessed)
         {
             // Infinite recursion check
-            if (alreadyProcessed.Exists(x => x.filePath == filePath)) return new string[0]; // Already included, return empty to avoid duplicates
+            if (alreadyProcessed.Exists(x => x.filePath == filePath))
+                return new string[0]; // Already included, return empty to avoid duplicates
 
             // Mark as processed to prevent infinite recursion
             ParsedShaderFile marker = new ParsedShaderFile();
@@ -2026,6 +2024,7 @@ namespace Thry.ThryEditor
 
             string[] fileLines = fileContents.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             List<string> resultLines = new List<string>();
+
             bool isCommentedOut = false;
             int currentExcludeDepth = 0;
             bool doExclude = false;
@@ -2087,9 +2086,13 @@ namespace Thry.ThryEditor
                     if (DefaultUnityShaderIncludes.Contains(includeFilename) == false)
                     {
                         string includeFullpath = includeFilename;
-                        if (includeFilename.StartsWith("Assets/", StringComparison.Ordinal) == false && includeFilename.StartsWith("Packages/", StringComparison.Ordinal) == false) includeFullpath = GetFullPath(includeFilename, Path.GetDirectoryName(filePath));
+                        if (includeFilename.StartsWith("Assets/", StringComparison.Ordinal) == false && includeFilename.StartsWith("Packages/", StringComparison.Ordinal) == false)
+                            includeFullpath = GetFullPath(includeFilename, Path.GetDirectoryName(filePath));
+                        if (includeFullpath.StartsWith("Packages/", StringComparison.Ordinal))
+                            includeFullpath = Path.GetFullPath(includeFullpath);
                         string[] nestedLines = GetInlinedIncludeLines(includeFullpath, macros, material, stripTextures, alreadyProcessed);
-                        if (nestedLines == null) return null;
+                        if (nestedLines == null)
+                            return null;
                         resultLines.Add($"// [Inlined] {includeFilename}");
                         resultLines.AddRange(nestedLines);
                         resultLines.Add($"// [End Inlined] {includeFilename}");
@@ -3014,6 +3017,8 @@ namespace Thry.ThryEditor
         private static Dictionary<Shader, bool> isShaderUsingThryOptimizer = new Dictionary<Shader, bool>();
         public static bool IsShaderUsingThryOptimizer(Shader shader)
         {
+            if (shader == null) return false;
+            
             if (isShaderUsingThryOptimizer.ContainsKey(shader))
             {
                 return isShaderUsingThryOptimizer[shader];

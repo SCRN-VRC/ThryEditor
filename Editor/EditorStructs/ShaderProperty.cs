@@ -137,7 +137,6 @@ namespace Thry.ThryEditor
                 UpdateIsAnimatedFromTag();
             }
 
-            ExecuteOnValueActions(ShaderEditor.Active.Materials);
             RaisePropertyValueChanged();
             if (applyDrawers) MyShaderUI.ApplyDrawers();
         }
@@ -164,7 +163,6 @@ namespace Thry.ThryEditor
                 UpdateIsAnimatedFromTag();
             }
 
-            ExecuteOnValueActions(ShaderEditor.Active.Materials);
             RaisePropertyValueChanged();
             if (applyDrawers) MyShaderUI.ApplyDrawers();
         }
@@ -185,8 +183,6 @@ namespace Thry.ThryEditor
             {
                 ShaderOptimizer.CopyAnimatedTag(MaterialProperty, targets);
             }
-
-            ExecuteOnValueActions(targets);
 
             if (applyDrawers) MaterialEditor.ApplyMaterialPropertyDrawers(targets);
         }
@@ -212,7 +208,6 @@ namespace Thry.ThryEditor
                 ShaderOptimizer.CopyAnimatedTag(MaterialProperty, target.MaterialProperty.targets as Material[]);
             }
 
-            target.ExecuteOnValueActions(target.MaterialProperty.targets as Material[]);
             target.RaisePropertyValueChanged();
             if (applyDrawers) MaterialEditor.ApplyMaterialPropertyDrawers(target.MaterialProperty.targets as Material[]);
         }

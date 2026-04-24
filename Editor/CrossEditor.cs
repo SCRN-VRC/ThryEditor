@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Thry.ThryEditor.Helpers;
 using UnityEditor;
 using UnityEngine;
 
@@ -39,6 +40,8 @@ namespace Thry.ThryEditor
 
         List<Material> _materialList = new List<Material>();
         List<Material> _targets = new List<Material>();
+        HashSet<Material> _incompatibleMaterials = new HashSet<Material>();
+        HashSet<Material> _disabledMaterials = new HashSet<Material>();
         Dictionary<Material,Shader> _targetShaders = new Dictionary<Material, Shader>();
         ShaderEditor _shaderEditor = null;
         MaterialEditor _materialEditor = null;
@@ -58,9 +61,10 @@ namespace Thry.ThryEditor
 
         private void UpdateTargets()
         {
-            _targets = _materialList.Where(t => t != null && !t.shader.IsBroken()).ToList();
-            foreach(Material m in _materialList.Where(t => t != null && t.shader.IsBroken()))
-                Debug.LogWarning("Material " + m.name + " has no shader assigned");
+            _incompatibleMaterials = new HashSet<Material>(
+                _materialList.Where(t => t != null && !t.shader.IsBroken() && !ShaderHelper.IsShaderUsingThryEditor(t)));
+            _disabledMaterials.IntersectWith(_materialList);
+            _targets = _materialList.Where(t => t != null && !t.shader.IsBroken() && !_incompatibleMaterials.Contains(t) && !_disabledMaterials.Contains(t)).ToList();
 
             _shaderEditor = null;
         }
@@ -113,9 +117,28 @@ namespace Thry.ThryEditor
 
         private void DrawMaterial(int i)
         {
+            Material current = _materialList[i];
+            bool isIncompatible = current != null && _incompatibleMaterials.Contains(current);
+            bool isDisabled = current != null && _disabledMaterials.Contains(current);
+            Color prevColor = GUI.backgroundColor;
+            if (isIncompatible) GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
+
             using (new EditorGUILayout.HorizontalScope())
             {
                 GUILayout.Space(15);
+
+                using (new EditorGUI.DisabledGroupScope(current == null || isIncompatible))
+                {
+                    bool enabled = current != null && !isDisabled && !isIncompatible;
+                    bool newEnabled = EditorGUILayout.Toggle(enabled, GUILayout.Width(15));
+                    if (newEnabled != enabled && current != null && !isIncompatible)
+                    {
+                        if (newEnabled) _disabledMaterials.Remove(current);
+                        else _disabledMaterials.Add(current);
+                        UpdateTargets();
+                    }
+                }
+
                 Material material = (Material)EditorGUILayout.ObjectField(_materialList[i], typeof(Material), false);
 
                 if (material != _materialList[i])
@@ -127,6 +150,10 @@ namespace Thry.ThryEditor
 
                 if (GUILayout.Button("Remove", GUILayout.Width(60))) _materialList.RemoveAt(i);
             }
+
+            GUI.backgroundColor = prevColor;
+            if (isIncompatible)
+                EditorGUILayout.HelpBox($"'{current.shader.name}' is not compatible with the Cross Shader Editor.", MessageType.None);
         }
 
         private void DrawShaderEditor()
@@ -184,13 +211,6 @@ namespace Thry.ThryEditor
             }
             // Get MaterialProperties of all materials
             _materialProperties = propertiesOrdered.Select(p => MaterialEditor.GetMaterialProperty(propertyMaterials[p], p)).ToArray();
-            Debug.Log(propertyMaterials["_EnableGrabpass"].Length);
-            MaterialProperty test = _materialProperties.Where(p => p.name == "_EnableGrabpass").First();
-            Debug.Log(test.displayName);
-            Debug.Log(test.GetPropertyType());
-            Debug.Log(test.GetPropertyFlags());
-            Shader s = (test.targets[0] as Material).shader;
-            Debug.Log(string.Join(",", s.GetPropertyAttributes(s.FindPropertyIndex(test.name))));
         }
     }
 }

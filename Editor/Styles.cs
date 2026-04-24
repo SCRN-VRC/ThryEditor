@@ -136,7 +136,7 @@ namespace Thry.ThryEditor
 					_label_property_note = new GUIStyle(EditorStyles.label)
 					{
 						alignment = TextAnchor.MiddleRight,
-						padding = new RectOffset(0, 0, 0, 4),
+						padding = new RectOffset(0, 0, 0, 0),
 						normal = new GUIStyleState { textColor = EditorGUIUtility.isProSkin ? new Color(1f, 1f, 1f, 0.6f) : new Color(0f, 0f, 0f, 1f) }
 					};
 				}
@@ -237,6 +237,33 @@ namespace Thry.ThryEditor
 		public static readonly GUIStyle linked = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_LINK));
 		public static readonly GUIStyle thryIcon = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_THRY));
 		public static readonly GUIStyle github = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_GITHUB));
+		public static readonly GUIStyle video = CreateVideoIconStyle();
+
+		static GUIStyle CreateVideoIconStyle()
+		{
+			// Try multiple icon names for cross-version compatibility
+			string[] candidates = { "PlayButton", "d_PlayButton", "Animation.Play", "d_Animation.Play", "d_Video Player" };
+			foreach (var name in candidates)
+			{
+				var content = EditorGUIUtility.IconContent(name);
+				if (content?.image != null)
+					return CreateIconStyle(content);
+			}
+			// Generate a fallback texture so the button is always visible
+			var fallback = new Texture2D(16, 16) { hideFlags = HideFlags.HideAndDontSave };
+			var pixels = new Color[16 * 16];
+			for (int y = 0; y < 16; y++)
+				for (int x = 0; x < 16; x++)
+				{
+					// Simple play triangle
+					float ny = (y - 8f) / 8f; // -1 to 1
+					float maxX = (1f - Mathf.Abs(ny)) * 10f + 3f;
+					pixels[y * 16 + x] = x >= 3 && x <= maxX ? Color.white : Color.clear;
+				}
+			fallback.SetPixels(pixels);
+			fallback.Apply();
+			return CreateIconStyle(fallback);
+		}
 
 		static GUIStyle CreateIconStyle(GUIContent content)
 		{
