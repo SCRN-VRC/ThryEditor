@@ -545,9 +545,9 @@ namespace Thry.ThryEditor
         static DefineableCondition ParseSingle(string s, MaterialRenference materialRenference)
         {
             int compIndex = s.IndexOfAny(ComparisonLiteralsToCheckFor);
-            int comLength = s[compIndex + 1] == '=' ? 2 : 1;
             if (compIndex != -1)
             {
+                int comLength = (compIndex + 1 < s.Length && s[compIndex + 1] == '=') ? 2 : 1;
                 return new Comparison(
                     new ComparisonData(s.Substring(0, compIndex).Trim(), materialRenference),
                     new ComparisonData(s.Substring(compIndex + comLength).Trim(), materialRenference),
