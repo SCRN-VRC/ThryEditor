@@ -284,11 +284,66 @@ namespace Thry.ThryEditor.ShaderTranslations
 
             int renderQueue = mat.renderQueue;
 
+            // Variants can't have their shader changed and only store overridden properties in
+            // m_SavedProperties, which the translator reads from. Flatten into a standalone material
+            // so inherited values are translated too and the shader assignment below works.
+            if (mat.isVariant)
+                FlattenVariant(mat);
+
             mat.shader = newShader;
             shaderEditor.FakePartialInitilizationForLocaleGathering(newShader);
             shaderEditor.Materials[0] = mat;
 
             translator.Apply(shaderEditor, renderQueue);
+        }
+
+        static void FlattenVariant(Material mat)
+        {
+            Shader shader = mat.shader;
+            int propCount = shader.GetPropertyCount();
+
+            var floats = new Dictionary<string, float>();
+            var ints = new Dictionary<string, int>();
+            var colors = new Dictionary<string, Color>();
+            var vectors = new Dictionary<string, Vector4>();
+            var textures = new Dictionary<string, (Texture tex, Vector2 scale, Vector2 offset)>();
+
+            for (int i = 0; i < propCount; i++)
+            {
+                string name = shader.GetPropertyName(i);
+                switch (shader.GetPropertyType(i))
+                {
+                    case UnityEngine.Rendering.ShaderPropertyType.Float:
+                    case UnityEngine.Rendering.ShaderPropertyType.Range:
+                        floats[name] = mat.GetFloat(name);
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Int:
+                        ints[name] = mat.GetInteger(name);
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Color:
+                        colors[name] = mat.GetColor(name);
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Vector:
+                        vectors[name] = mat.GetVector(name);
+                        break;
+                    case UnityEngine.Rendering.ShaderPropertyType.Texture:
+                        textures[name] = (mat.GetTexture(name), mat.GetTextureScale(name), mat.GetTextureOffset(name));
+                        break;
+                }
+            }
+
+            mat.parent = null;
+
+            foreach (var kv in floats) mat.SetFloat(kv.Key, kv.Value);
+            foreach (var kv in ints) mat.SetInteger(kv.Key, kv.Value);
+            foreach (var kv in colors) mat.SetColor(kv.Key, kv.Value);
+            foreach (var kv in vectors) mat.SetVector(kv.Key, kv.Value);
+            foreach (var kv in textures)
+            {
+                mat.SetTexture(kv.Key, kv.Value.tex);
+                mat.SetTextureScale(kv.Key, kv.Value.scale);
+                mat.SetTextureOffset(kv.Key, kv.Value.offset);
+            }
         }
     }
 }
