@@ -26,25 +26,45 @@ namespace Thry.ThryEditor.UploadCallbacks
 
         private static Task HandlePreBuildEvent(BasisContentBase basisContentBase, List<BuildTarget> targets)
         {
-            var avatarObj = basisContentBase.gameObject;
-            if (avatarObj == null) return Task.CompletedTask;
+            var contentObj = basisContentBase.gameObject;
+            if (contentObj == null) return Task.CompletedTask;
 
-            Debug.Log($"Auto-locking materials for {avatarObj.name}");
+            Debug.Log($"Auto-locking materials for {contentObj.name}");
 
             List<Material> materials = new List<Material>();
-            materials.AddRange(avatarObj.GetComponentsInChildren<Renderer>(true)
-                .SelectMany(r => r.sharedMaterials));
-            
-            // Find animation clips
-            IEnumerable<AnimationClip> clips = avatarObj.GetComponentsInChildren<Animator>(true)
-                .Where(a => a != null && a.runtimeAnimatorController != null)
-                .Select(a => a.runtimeAnimatorController)
-                .SelectMany(a => a.animationClips);
+            IEnumerable<AnimationClip> clips = Enumerable.Empty<AnimationClip>();
 
-            var animator = avatarObj.GetComponent<Animator>();
-            if (animator != null && animator.runtimeAnimatorController != null)
+            if (basisContentBase is Basis.Scripts.BasisSdk.BasisScene)
             {
-                clips = clips.Concat(animator.runtimeAnimatorController.animationClips);
+                // For scene builds, lock materials on every renderer in every loaded scene
+                var allRenderers = Object.FindObjectsOfType<Renderer>(true);
+                materials.AddRange(allRenderers.SelectMany(r => r.sharedMaterials));
+
+                var allAnimators = Object.FindObjectsOfType<Animator>(true)
+                    .Where(a => a.runtimeAnimatorController != null);
+                clips = allAnimators
+                    .Select(a => a.runtimeAnimatorController)
+                    .SelectMany(a => a.animationClips);
+            }
+            else
+            {
+                // For avatar builds
+                materials.AddRange(contentObj.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(r => r.sharedMaterials));
+
+                // Find animation clips
+                IEnumerable<AnimationClip> rootClips = contentObj.GetComponentsInChildren<Animator>(true)
+                    .Where(a => a != null && a.runtimeAnimatorController != null)
+                    .Select(a => a.runtimeAnimatorController)
+                    .SelectMany(a => a.animationClips);
+
+                var animator = contentObj.GetComponent<Animator>();
+                if (animator != null && animator.runtimeAnimatorController != null)
+                {
+                    rootClips = rootClips.Concat(animator.runtimeAnimatorController.animationClips);
+                }
+
+                clips = rootClips;
             }
 
             // Handle clips
@@ -58,7 +78,7 @@ namespace Thry.ThryEditor.UploadCallbacks
                 materials.AddRange(clipMaterials);
             }
 
-            materials = materials.Distinct().ToList();
+            materials = materials.Distinct().Where(m => m != null).ToList();
             ShaderOptimizer.LockMaterials(materials);
 
             return Task.CompletedTask;
