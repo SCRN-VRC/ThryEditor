@@ -155,13 +155,14 @@ namespace Thry.ThryEditor.TexturePacker
             outputsBuffer.SetData(config.Targets);
             PackShader.SetBuffer(0, "OutputChannels", outputsBuffer);
 
+            string inputNameFormat = GetInputsNameFormat();
             for (int i = 0; i < config.Sources.Length; i++)
             {
-                PackShader.SetTexture(0, $"Inputs[{i}]", config.Sources[i].ComputeShaderTexture);
+                PackShader.SetTexture(0, string.Format(inputNameFormat, i), config.Sources[i].ComputeShaderTexture);
             }
             for (int i = config.Sources.Length; i < 16; i++)
             {
-                PackShader.SetTexture(0, $"Inputs[{i}]", Texture2D.blackTexture); // dummy textures for unused slots
+                PackShader.SetTexture(0, string.Format(inputNameFormat, i), Texture2D.blackTexture); // dummy textures for unused slots
             }
             // Vectors because int and float arrays are broken in compute shaders
             PackShader.SetVectorArray("InputTextureIsValid", config.Sources.Select(s => s.ComputeShaderTextureIsValid ? Vector4.one : Vector4.zero).ToArray());
@@ -210,6 +211,20 @@ namespace Thry.ThryEditor.TexturePacker
             RenderTexture.active = null;
 
             return atlas;
+        }
+
+        static string GetInputsNameFormat()
+        {
+            switch (SystemInfo.graphicsDeviceType)
+            {
+                case UnityEngine.Rendering.GraphicsDeviceType.Vulkan:
+                case UnityEngine.Rendering.GraphicsDeviceType.OpenGLCore:
+                case UnityEngine.Rendering.GraphicsDeviceType.OpenGLES2:
+                case UnityEngine.Rendering.GraphicsDeviceType.OpenGLES3:
+                    return "Inputs_{0}_";
+                default:
+                    return "Inputs[{0}]";
+            }
         }
 
         #region Channel Unpacker
