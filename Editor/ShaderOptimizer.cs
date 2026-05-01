@@ -362,8 +362,12 @@ namespace Thry.ThryEditor
                             else
                                 constantValue = value.x.ToString("0.0####################", CultureInfo.InvariantCulture);
 
-                            // Add comment with property name, for easier debug
-                            sb.Append(constantValue);
+                            // Wrap negative literals in parentheses so callers like `-_Prop` don't
+                            // collapse into `--1.25` (parsed as pre-decrement on a non-l-value).
+                            if (value.x < 0)
+                                sb.Append("(").Append(constantValue).Append(")");
+                            else
+                                sb.Append(constantValue);
                             break;
                         case PropertyType.Vector:
                             sb.Append("float4(");
