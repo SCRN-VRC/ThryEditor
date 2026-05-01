@@ -226,17 +226,17 @@ namespace Thry.ThryEditor
 	{
 		public static readonly GUIStyle help = CreateIconStyle(EditorGUIUtility.IconContent("_Help@2x"));
 		public static readonly GUIStyle menu = CreateIconStyle(EditorGUIUtility.IconContent("_Menu"));
-		public static readonly GUIStyle settings = CreateIconStyle(EditorGUIUtility.IconContent("_Popup@2x"));
+		public static readonly GUIStyle settings = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_SETTINGS));
 		public static readonly GUIStyle search = CreateIconStyle(EditorGUIUtility.IconContent("Search Icon"));
 		public static readonly GUIStyle presets = CreateIconStyle(EditorGUIUtility.IconContent("Preset.Context"));
 		public static readonly GUIStyle add = CreateIconStyle(EditorGUIUtility.IconContent("PrefabOverlayAdded Icon"));
 		public static readonly GUIStyle remove = CreateIconStyle(EditorGUIUtility.IconContent("PrefabOverlayRemoved Icon"));
 		public static readonly GUIStyle refresh = CreateIconStyle(EditorGUIUtility.IconContent("d_Refresh"));
 		public static readonly GUIStyle shaders = CreateIconStyle(EditorGUIUtility.IconContent("d_ShaderVariantCollection Icon"));
-		public static readonly GUIStyle tools = CreateIconStyle(EditorGUIUtility.IconContent("d_SceneViewTools@2x"));
-		public static readonly GUIStyle linked = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_LINK));
-		public static readonly GUIStyle thryIcon = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_THRY));
-		public static readonly GUIStyle github = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_GITHUB));
+		public static readonly GUIStyle tools = CreateIconStyle(LoadTextureByGUID(RESOURCE_GUID.ICON_TOOLS));
+		public static readonly GUIStyle linked = CreateIconStyle(LoadTextureByGUID(EditorGUIUtility.isProSkin ? RESOURCE_GUID.ICON_LINK : RESOURCE_GUID.ICON_LINK_INV));
+		public static readonly GUIStyle thryIcon = CreateIconStyle(LoadTextureByGUID(EditorGUIUtility.isProSkin ? RESOURCE_GUID.ICON_THRY : RESOURCE_GUID.ICON_THRY_INV));
+		public static readonly GUIStyle github = CreateIconStyle(LoadTextureByGUID(EditorGUIUtility.isProSkin ? RESOURCE_GUID.ICON_GITHUB : RESOURCE_GUID.ICON_GITHUB_INV));
 		public static readonly GUIStyle video = CreateVideoIconStyle();
 
 		static GUIStyle CreateVideoIconStyle()
