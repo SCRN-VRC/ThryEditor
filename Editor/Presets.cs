@@ -526,7 +526,7 @@ namespace Thry.ThryEditor
             }
             if (s_appliedPresets.ContainsKey(shaderEditor.Materials[0]))
             {
-                const float rowHeight = 20f;
+                const float rowHeight = 22f;
                 var rowRect = EditorGUILayout.GetControlRect(false, rowHeight);
 
                 float pad = 2f;
@@ -553,6 +553,8 @@ namespace Thry.ThryEditor
                     Dismiss(shaderEditor);
                     shaderEditor.Repaint();
                 }
+                
+                GUILayout.Space(12);
             }
         }
 
