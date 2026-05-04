@@ -5,11 +5,21 @@ namespace Thry.ThryEditor.Drawers
 {
 	// [Helpbox(messageType)] - Standard helpbox
 	// [Helpbox(messageType, minLines)] - Minimum height in lines
+	// [Helpbox(messageType, minLines, iconType)] - 0=help (default), 1=thryEditor_Help, 2=thryEditor_Warning, 3=thryEditor_Danger; falls back to help
 	public class HelpboxDrawer : MaterialPropertyDrawer
 	{
 		readonly MessageType type;
 		readonly int minLines;
-		static Texture2D _customIcon;
+		readonly int iconType;
+		Texture2D _customIcon;
+
+		static readonly string[] _iconResourceNames =
+		{
+			"help",               // 0 - legacy fallback
+			"thryEditor_Help",    // 1
+			"thryEditor_Warning", // 2
+			"thryEditor_Danger",  // 3
+		};
 
 		public HelpboxDrawer()
 		{
@@ -29,11 +39,23 @@ namespace Thry.ThryEditor.Drawers
 			this.minLines = (int)minLines;
 		}
 
+		public HelpboxDrawer(float messageType, float minLines, float iconType)
+		{
+			type = (MessageType)(int)messageType;
+			this.minLines = (int)minLines;
+			this.iconType = (int)iconType;
+		}
+
 	public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
 	{
 		if (_customIcon == null)
 		{
-			_customIcon = Resources.Load<Texture2D>("help");
+			int idx = (iconType >= 0 && iconType < _iconResourceNames.Length) ? iconType : 0;
+			_customIcon = Resources.Load<Texture2D>(_iconResourceNames[idx]);
+			if (_customIcon == null && idx != 0)
+			{
+				_customIcon = Resources.Load<Texture2D>(_iconResourceNames[0]);
+			}
 		}
 
 		PropertyOptions options = ShaderEditor.Active?.CurrentProperty?.Options;
